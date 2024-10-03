@@ -1,0 +1,9 @@
+{
+	"name": "az-datafactory-101",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "7d10a069-751b-4825-9bf6-9774812d7a77",
+		"tenantId": "2383b242-65d8-4c11-a6ff-ca7bc08157ef"
+	}
+}

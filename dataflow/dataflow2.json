@@ -1,0 +1,232 @@
+{
+	"name": "dataflow2",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable5",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable6",
+						"type": "DatasetReference"
+					},
+					"name": "sink1",
+					"description": "Fact table sink"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable7",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable8",
+						"type": "DatasetReference"
+					},
+					"name": "sink3",
+					"description": "DateTime dimension table"
+				}
+			],
+			"transformations": [
+				{
+					"name": "select1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "DimProduct"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "FactTable"
+				},
+				{
+					"name": "join1"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "join2"
+				},
+				{
+					"name": "select3"
+				},
+				{
+					"name": "dateDimFinal"
+				},
+				{
+					"name": "ProductDimFinal"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          uniq_id as string,",
+				"          product_url as string,",
+				"          product_name as string,",
+				"          pid as string,",
+				"          image as string,",
+				"          is_FK_Advantage_product as string,",
+				"          description as string,",
+				"          Category as string,",
+				"          {Sub Category} as string,",
+				"          {Sub Sub Category} as string,",
+				"          {Retail Price} as integer,",
+				"          {Discounted Price} as integer,",
+				"          {Product Rating} as integer,",
+				"          {Overall Rating} as integer,",
+				"          Brand as string,",
+				"          crawl_timestamp as timestamp,",
+				"          loaded_time as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     inferDriftedColumnTypes: true,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"source1 select(mapColumn(",
+				"          crawl_timestamp,",
+				"          uniq_id",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 derive(Datekey = uuid(),",
+				"          Date = toDate(crawl_timestamp),",
+				"          Year = year(crawl_timestamp),",
+				"          month = month(crawl_timestamp),",
+				"          Weekday = dayOfWeek(crawl_timestamp),",
+				"          {Day of Month} = dayOfMonth(crawl_timestamp),",
+				"          {Day Of Year} = dayOfYear(crawl_timestamp)) ~> derivedColumn1",
+				"source1 select(mapColumn(",
+				"          uniq_id,",
+				"          product_url,",
+				"          product_name,",
+				"          pid,",
+				"          image,",
+				"          is_FK_Advantage_product,",
+				"          description,",
+				"          Category,",
+				"          {Sub Category},",
+				"          {Sub Sub Category},",
+				"          Brand",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> DimProduct",
+				"DimProduct derive(Product_key = uuid()) ~> derivedColumn2",
+				"source1 select(mapColumn(",
+				"          uniq_id,",
+				"          {Retail Price},",
+				"          {Discounted Price},",
+				"          {Product Rating},",
+				"          {Overall Rating}",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> FactTable",
+				"FactTable, derivedColumn2 join(FactTable@uniq_id == DimProduct@uniq_id,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1 select(mapColumn(",
+				"          uniq_id = FactTable@uniq_id,",
+				"          {Retail Price},",
+				"          {Discounted Price},",
+				"          {Product Rating},",
+				"          {Overall Rating},",
+				"          Product_key",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select2, derivedColumn1 join(select2@uniq_id == select1@uniq_id,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join2",
+				"join2 select(mapColumn(",
+				"          uniq_id = select2@uniq_id,",
+				"          {Retail Price},",
+				"          {Discounted Price},",
+				"          {Product Rating},",
+				"          {Overall Rating},",
+				"          Product_key,",
+				"          Datekey",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select3",
+				"derivedColumn1 select(mapColumn(",
+				"          crawl_timestamp,",
+				"          Datekey,",
+				"          Date,",
+				"          Year,",
+				"          month,",
+				"          Weekday,",
+				"          {Day of Month},",
+				"          {Day Of Year}",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> dateDimFinal",
+				"derivedColumn2 select(mapColumn(",
+				"          product_url,",
+				"          product_name,",
+				"          pid,",
+				"          image,",
+				"          is_FK_Advantage_product,",
+				"          description,",
+				"          Category,",
+				"          {Sub Category},",
+				"          {Sub Sub Category},",
+				"          Brand,",
+				"          Product_key",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> ProductDimFinal",
+				"select3 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink1",
+				"ProductDimFinal sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink2",
+				"dateDimFinal sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink3"
+			]
+		}
+	}
+}

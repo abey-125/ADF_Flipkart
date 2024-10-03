@@ -1,0 +1,105 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Excel1",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable3",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "select1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          uniq_id as string,",
+				"          crawl_timestamp as string,",
+				"          product_url as string,",
+				"          product_name as string,",
+				"          product_category_tree as string,",
+				"          pid as string,",
+				"          retail_price as string,",
+				"          discounted_price as string,",
+				"          image as string,",
+				"          is_FK_Advantage_product as string,",
+				"          description as string,",
+				"          product_rating as string,",
+				"          overall_rating as string,",
+				"          brand as string,",
+				"          product_specifications as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 derive(Category = iifNull(replace((split(product_category_tree,\">>\")[1]),\"[\\\"\",\"\"),\"None\"),",
+				"          {Sub Category} = iifNull(replace(split(product_category_tree,\">>\")[2],\"\\\"]\",\"\"),\"None\"),",
+				"          {Sub Sub Category} = iifNull(replace(split(product_category_tree,\">>\")[3],\"\\\"]\",\"\"),\"None\"),",
+				"          crawl_timestamp = toTimestamp(crawl_timestamp),",
+				"          {Retail Price} = toInteger(retail_price),",
+				"          {Discounted Price} = toInteger(discounted_price),",
+				"          {Product Rating} = iif(product_rating==\"No rating available\",0,toInteger(product_rating)),",
+				"          {Overall Rating} = iif(overall_rating==\"No rating available\",0,toInteger(overall_rating)),",
+				"          Brand = iifNull(brand,\"None\"),",
+				"          UniqId = concat(\r",
+				"    substring(uniq_id, 1, 8), '-',\r",
+				"    substring(uniq_id, 9, 4), '-',\r",
+				"    substring(uniq_id, 13, 4), '-',\r",
+				"    substring(uniq_id, 17, 4), '-',\r",
+				"    substring(uniq_id, 21, 12)\r",
+				"),",
+				"          loaded_time = currentTimestamp()) ~> derivedColumn1",
+				"derivedColumn1 select(mapColumn(",
+				"          uniq_id = UniqId,",
+				"          product_url,",
+				"          product_name,",
+				"          pid,",
+				"          image,",
+				"          is_FK_Advantage_product,",
+				"          description,",
+				"          Category,",
+				"          {Sub Category},",
+				"          {Sub Sub Category},",
+				"          {Retail Price},",
+				"          {Discounted Price},",
+				"          {Product Rating},",
+				"          {Overall Rating},",
+				"          Brand = derivedColumn1@Brand,",
+				"          crawl_timestamp,",
+				"          loaded_time",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+			]
+		}
+	}
+}

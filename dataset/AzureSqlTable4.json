@@ -1,0 +1,82 @@
+{
+	"name": "AzureSqlTable4",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase4",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "uniq_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "product_url",
+				"type": "nvarchar"
+			},
+			{
+				"name": "product_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "pid",
+				"type": "nvarchar"
+			},
+			{
+				"name": "image",
+				"type": "nvarchar"
+			},
+			{
+				"name": "is_FK_Advantage_product",
+				"type": "nvarchar"
+			},
+			{
+				"name": "description",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Category",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Sub Category",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Sub Sub Category",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Retail Price",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Discounted Price",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Product Rating",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Overall Rating",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Brand",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Flipkart"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

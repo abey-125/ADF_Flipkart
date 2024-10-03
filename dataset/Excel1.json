@@ -1,0 +1,84 @@
+{
+	"name": "Excel1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": "Sheet1",
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "flipkart_Data.xlsx",
+				"folderPath": "input_file",
+				"container": "e-commerce-data"
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": [
+			{
+				"name": "uniq_id",
+				"type": "String"
+			},
+			{
+				"name": "crawl_timestamp",
+				"type": "String"
+			},
+			{
+				"name": "product_url",
+				"type": "String"
+			},
+			{
+				"name": "product_name",
+				"type": "String"
+			},
+			{
+				"name": "product_category_tree",
+				"type": "String"
+			},
+			{
+				"name": "pid",
+				"type": "String"
+			},
+			{
+				"name": "retail_price",
+				"type": "String"
+			},
+			{
+				"name": "discounted_price",
+				"type": "String"
+			},
+			{
+				"name": "image",
+				"type": "String"
+			},
+			{
+				"name": "is_FK_Advantage_product",
+				"type": "String"
+			},
+			{
+				"name": "description",
+				"type": "String"
+			},
+			{
+				"name": "product_rating",
+				"type": "String"
+			},
+			{
+				"name": "overall_rating",
+				"type": "String"
+			},
+			{
+				"name": "brand",
+				"type": "String"
+			},
+			{
+				"name": "product_specifications",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
