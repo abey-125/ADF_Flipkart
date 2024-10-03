@@ -1,0 +1,81 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "az-datafactory-101"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"value": ""
+		},
+		"AzureSqlDatabase1_password": {
+			"value": ""
+		},
+		"AzureSqlDatabase2_password": {
+			"value": ""
+		},
+		"AzureSqlDatabase3_password": {
+			"value": ""
+		},
+		"AzureSqlDatabase4_password": {
+			"value": ""
+		},
+		"SqlServer1_onprem_password": {
+			"value": ""
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"value": "az-abey-sql-server.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"value": "az-database02"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"value": "abey125"
+		},
+		"AzureSqlDatabase2_properties_typeProperties_server": {
+			"value": "az-abey-sql-server.database.windows.net"
+		},
+		"AzureSqlDatabase2_properties_typeProperties_database": {
+			"value": "database01"
+		},
+		"AzureSqlDatabase2_properties_typeProperties_userName": {
+			"value": "abey125"
+		},
+		"AzureSqlDatabase3_properties_typeProperties_server": {
+			"value": "az-abey-sql-server.database.windows.net"
+		},
+		"AzureSqlDatabase3_properties_typeProperties_database": {
+			"value": "Flipkart_Database"
+		},
+		"AzureSqlDatabase3_properties_typeProperties_userName": {
+			"value": "abey125"
+		},
+		"AzureSqlDatabase4_properties_typeProperties_server": {
+			"value": "az-abey-sql-server.database.windows.net"
+		},
+		"AzureSqlDatabase4_properties_typeProperties_database": {
+			"value": "Flipkart_Database"
+		},
+		"AzureSqlDatabase4_properties_typeProperties_userName": {
+			"value": "abey125"
+		},
+		"SqlServer1_onprem_properties_typeProperties_server": {
+			"value": "MSI"
+		},
+		"SqlServer1_onprem_properties_typeProperties_database": {
+			"value": "AdventureWorks2022"
+		},
+		"SqlServer1_onprem_properties_typeProperties_userName": {
+			"value": "admin"
+		},
+		"trigger2_properties_typeProperties_scope": {
+			"value": "/subscriptions/de585592-b752-4095-932e-ae95d4d9bbff/resourceGroups/az-storage-acc1/providers/Microsoft.Storage/storageAccounts/azureprojects101"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
