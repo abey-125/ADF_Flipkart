@@ -1,0 +1,780 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name"
+		},
+		"AzureSqlDatabase4": {
+			"type": "string"
+		},
+		"AzureBlobStorage1": {
+			"type": "string"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/E-commerce pipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "E-commerce",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow1",
+								"type": "DataFlowReference"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Fact and Dimension",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "E-commerce",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow2",
+								"type": "DataFlowReference"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "DimProduct_primary key",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Fact and Dimension",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[AddPrimaryKeyToDimProduct]"
+						},
+						"linkedServiceName": {
+							"referenceName": "[parameters('AzureSqlDatabase4')]",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Stored procedure2",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Fact and Dimension",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[AddPrimaryKeyToDimDate]"
+						},
+						"linkedServiceName": {
+							"referenceName": "[parameters('AzureSqlDatabase4')]",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Fact_table_pk_fk",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "DimProduct_primary key",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Stored procedure2",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[AddPrimaryKeyAndForeignKeysToFactFlipkart]"
+						},
+						"linkedServiceName": {
+							"referenceName": "[parameters('AzureSqlDatabase4')]",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2024-09-30T13:58:21Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dataflow1')]",
+				"[concat(variables('factoryId'), '/dataflows/dataflow2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Excel1",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable3",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "select1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          uniq_id as string,",
+						"          crawl_timestamp as string,",
+						"          product_url as string,",
+						"          product_name as string,",
+						"          product_category_tree as string,",
+						"          pid as string,",
+						"          retail_price as string,",
+						"          discounted_price as string,",
+						"          image as string,",
+						"          is_FK_Advantage_product as string,",
+						"          description as string,",
+						"          product_rating as string,",
+						"          overall_rating as string,",
+						"          brand as string,",
+						"          product_specifications as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"source1 derive(Category = iifNull(replace((split(product_category_tree,\">>\")[1]),\"[\\\"\",\"\"),\"None\"),",
+						"          {Sub Category} = iifNull(replace(split(product_category_tree,\">>\")[2],\"\\\"]\",\"\"),\"None\"),",
+						"          {Sub Sub Category} = iifNull(replace(split(product_category_tree,\">>\")[3],\"\\\"]\",\"\"),\"None\"),",
+						"          crawl_timestamp = toTimestamp(crawl_timestamp),",
+						"          {Retail Price} = toInteger(retail_price),",
+						"          {Discounted Price} = toInteger(discounted_price),",
+						"          {Product Rating} = iif(product_rating==\"No rating available\",0,toInteger(product_rating)),",
+						"          {Overall Rating} = iif(overall_rating==\"No rating available\",0,toInteger(overall_rating)),",
+						"          Brand = iifNull(brand,\"None\"),",
+						"          UniqId = concat(\r",
+						"    substring(uniq_id, 1, 8), '-',\r",
+						"    substring(uniq_id, 9, 4), '-',\r",
+						"    substring(uniq_id, 13, 4), '-',\r",
+						"    substring(uniq_id, 17, 4), '-',\r",
+						"    substring(uniq_id, 21, 12)\r",
+						"),",
+						"          loaded_time = currentTimestamp()) ~> derivedColumn1",
+						"derivedColumn1 select(mapColumn(",
+						"          uniq_id = UniqId,",
+						"          product_url,",
+						"          product_name,",
+						"          pid,",
+						"          image,",
+						"          is_FK_Advantage_product,",
+						"          description,",
+						"          Category,",
+						"          {Sub Category},",
+						"          {Sub Sub Category},",
+						"          {Retail Price},",
+						"          {Discounted Price},",
+						"          {Product Rating},",
+						"          {Overall Rating},",
+						"          Brand = derivedColumn1@Brand,",
+						"          crawl_timestamp,",
+						"          loaded_time",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Excel1')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable3')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable5",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable6",
+								"type": "DatasetReference"
+							},
+							"name": "sink1",
+							"description": "Fact table sink"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable7",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable8",
+								"type": "DatasetReference"
+							},
+							"name": "sink3",
+							"description": "DateTime dimension table"
+						}
+					],
+					"transformations": [
+						{
+							"name": "select1"
+						},
+						{
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "DimProduct"
+						},
+						{
+							"name": "derivedColumn2"
+						},
+						{
+							"name": "FactTable"
+						},
+						{
+							"name": "join1"
+						},
+						{
+							"name": "select2"
+						},
+						{
+							"name": "join2"
+						},
+						{
+							"name": "select3"
+						},
+						{
+							"name": "dateDimFinal"
+						},
+						{
+							"name": "ProductDimFinal"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          uniq_id as string,",
+						"          product_url as string,",
+						"          product_name as string,",
+						"          pid as string,",
+						"          image as string,",
+						"          is_FK_Advantage_product as string,",
+						"          description as string,",
+						"          Category as string,",
+						"          {Sub Category} as string,",
+						"          {Sub Sub Category} as string,",
+						"          {Retail Price} as integer,",
+						"          {Discounted Price} as integer,",
+						"          {Product Rating} as integer,",
+						"          {Overall Rating} as integer,",
+						"          Brand as string,",
+						"          crawl_timestamp as timestamp,",
+						"          loaded_time as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     inferDriftedColumnTypes: true,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source1",
+						"source1 select(mapColumn(",
+						"          crawl_timestamp,",
+						"          uniq_id",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 derive(Datekey = uuid(),",
+						"          Date = toDate(crawl_timestamp),",
+						"          Year = year(crawl_timestamp),",
+						"          month = month(crawl_timestamp),",
+						"          Weekday = dayOfWeek(crawl_timestamp),",
+						"          {Day of Month} = dayOfMonth(crawl_timestamp),",
+						"          {Day Of Year} = dayOfYear(crawl_timestamp)) ~> derivedColumn1",
+						"source1 select(mapColumn(",
+						"          uniq_id,",
+						"          product_url,",
+						"          product_name,",
+						"          pid,",
+						"          image,",
+						"          is_FK_Advantage_product,",
+						"          description,",
+						"          Category,",
+						"          {Sub Category},",
+						"          {Sub Sub Category},",
+						"          Brand",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> DimProduct",
+						"DimProduct derive(Product_key = uuid()) ~> derivedColumn2",
+						"source1 select(mapColumn(",
+						"          uniq_id,",
+						"          {Retail Price},",
+						"          {Discounted Price},",
+						"          {Product Rating},",
+						"          {Overall Rating}",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> FactTable",
+						"FactTable, derivedColumn2 join(FactTable@uniq_id == DimProduct@uniq_id,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join1",
+						"join1 select(mapColumn(",
+						"          uniq_id = FactTable@uniq_id,",
+						"          {Retail Price},",
+						"          {Discounted Price},",
+						"          {Product Rating},",
+						"          {Overall Rating},",
+						"          Product_key",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select2",
+						"select2, derivedColumn1 join(select2@uniq_id == select1@uniq_id,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join2",
+						"join2 select(mapColumn(",
+						"          uniq_id = select2@uniq_id,",
+						"          {Retail Price},",
+						"          {Discounted Price},",
+						"          {Product Rating},",
+						"          {Overall Rating},",
+						"          Product_key,",
+						"          Datekey",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select3",
+						"derivedColumn1 select(mapColumn(",
+						"          crawl_timestamp,",
+						"          Datekey,",
+						"          Date,",
+						"          Year,",
+						"          month,",
+						"          Weekday,",
+						"          {Day of Month},",
+						"          {Day Of Year}",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> dateDimFinal",
+						"derivedColumn2 select(mapColumn(",
+						"          product_url,",
+						"          product_name,",
+						"          pid,",
+						"          image,",
+						"          is_FK_Advantage_product,",
+						"          description,",
+						"          Category,",
+						"          {Sub Category},",
+						"          {Sub Sub Category},",
+						"          Brand,",
+						"          Product_key",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> ProductDimFinal",
+						"select3 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sink1",
+						"ProductDimFinal sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sink2",
+						"dateDimFinal sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sink3"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable5')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable6')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable7')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable8')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Excel1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureBlobStorage1')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Excel",
+				"typeProperties": {
+					"sheetName": "Sheet1",
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "flipkart_Data.xlsx",
+						"folderPath": "input_file",
+						"container": "e-commerce-data"
+					},
+					"firstRowAsHeader": true
+				},
+				"schema": [
+					{
+						"name": "uniq_id",
+						"type": "String"
+					},
+					{
+						"name": "crawl_timestamp",
+						"type": "String"
+					},
+					{
+						"name": "product_url",
+						"type": "String"
+					},
+					{
+						"name": "product_name",
+						"type": "String"
+					},
+					{
+						"name": "product_category_tree",
+						"type": "String"
+					},
+					{
+						"name": "pid",
+						"type": "String"
+					},
+					{
+						"name": "retail_price",
+						"type": "String"
+					},
+					{
+						"name": "discounted_price",
+						"type": "String"
+					},
+					{
+						"name": "image",
+						"type": "String"
+					},
+					{
+						"name": "is_FK_Advantage_product",
+						"type": "String"
+					},
+					{
+						"name": "description",
+						"type": "String"
+					},
+					{
+						"name": "product_rating",
+						"type": "String"
+					},
+					{
+						"name": "overall_rating",
+						"type": "String"
+					},
+					{
+						"name": "brand",
+						"type": "String"
+					},
+					{
+						"name": "product_specifications",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable3')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureSqlDatabase4')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Flipkart"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable5')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureSqlDatabase4')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "uniq_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "product_url",
+						"type": "nvarchar"
+					},
+					{
+						"name": "product_name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "pid",
+						"type": "nvarchar"
+					},
+					{
+						"name": "image",
+						"type": "nvarchar"
+					},
+					{
+						"name": "is_FK_Advantage_product",
+						"type": "nvarchar"
+					},
+					{
+						"name": "description",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Category",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Sub Category",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Sub Sub Category",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Retail Price",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Discounted Price",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Product Rating",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Overall Rating",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Brand",
+						"type": "nvarchar"
+					},
+					{
+						"name": "crawl_timestamp",
+						"type": "datetime2",
+						"scale": 7
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Flipkart"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable6')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureSqlDatabase4')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Flipkart_fact"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable7')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureSqlDatabase4')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Dim_Product"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable8')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "[parameters('AzureSqlDatabase4')]",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Dim_Datetime"
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
