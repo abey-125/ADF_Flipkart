@@ -10,6 +10,14 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@concat('crypto_',utcNow())",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@concat('crypto_',formatDateTime(utcNow(),'yyyy-MM-dd') )",
+					"type": "Expression"
+				},
 				"container": "crypto"
 			}
 		},

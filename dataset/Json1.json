@@ -9,7 +9,11 @@
 		"type": "Json",
 		"typeProperties": {
 			"location": {
-				"type": "HttpServerLocation"
+				"type": "HttpServerLocation",
+				"relativeUrl": {
+					"value": "latest?apikey=30dc24cc0db9460f9b128b6cf1728d3c",
+					"type": "Expression"
+				}
 			}
 		},
 		"schema": {}
