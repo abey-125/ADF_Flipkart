@@ -79,6 +79,10 @@
 			"type": "string",
 			"defaultValue": "abey125"
 		},
+		"currencyfreaks_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://api.currencyfreaks.com/v2.0/rates/"
+		},
 		"SqlServer1_onprem_properties_typeProperties_server": {
 			"type": "string",
 			"defaultValue": "MSI"
@@ -192,6 +196,27 @@
 					"password": {
 						"type": "SecureString",
 						"value": "[parameters('AzureSqlDatabase4_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/currencyfreaks')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "HttpServer",
+				"typeProperties": {
+					"url": "[parameters('currencyfreaks_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous",
+					"authHeaders": {
+						"apikey": {
+							"type": "SecureString",
+							"value": "**********"
+						}
 					}
 				}
 			},
@@ -652,6 +677,63 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Json1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "currencyfreaks",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation",
+						"relativeUrl": {
+							"value": "latest?apikey=30dc24cc0db9460f9b128b6cf1728d3c",
+							"type": "Expression"
+						}
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/currencyfreaks')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Json2')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@concat('crypto_',utcNow())",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@concat('crypto_',formatDateTime(utcNow(),'yyyy-MM-dd') )",
+							"type": "Expression"
+						},
+						"container": "crypto"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/SqlServer1_onprem')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -677,156 +759,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/SqlServerTable1')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "SqlServer1_onprem",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "SqlServerTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": "HumanResources",
-					"table": "Department"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/SqlServer1_onprem')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/SqlServerTable2')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "SqlServer1_onprem",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "SqlServerTable",
-				"schema": [],
-				"typeProperties": {}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/SqlServer1_onprem')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "Excel1",
-								"type": "DatasetReference"
-							},
-							"name": "source1"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "AzureSqlTable3",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "derivedColumn1"
-						},
-						{
-							"name": "select1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          uniq_id as string,",
-						"          crawl_timestamp as string,",
-						"          product_url as string,",
-						"          product_name as string,",
-						"          product_category_tree as string,",
-						"          pid as string,",
-						"          retail_price as string,",
-						"          discounted_price as string,",
-						"          image as string,",
-						"          is_FK_Advantage_product as string,",
-						"          description as string,",
-						"          product_rating as string,",
-						"          overall_rating as string,",
-						"          brand as string,",
-						"          product_specifications as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source1",
-						"source1 derive(Category = iifNull(replace((split(product_category_tree,\">>\")[1]),\"[\\\"\",\"\"),\"None\"),",
-						"          {Sub Category} = iifNull(replace(split(product_category_tree,\">>\")[2],\"\\\"]\",\"\"),\"None\"),",
-						"          {Sub Sub Category} = iifNull(replace(split(product_category_tree,\">>\")[3],\"\\\"]\",\"\"),\"None\"),",
-						"          crawl_timestamp = toTimestamp(crawl_timestamp),",
-						"          {Retail Price} = toInteger(retail_price),",
-						"          {Discounted Price} = toInteger(discounted_price),",
-						"          {Product Rating} = iif(product_rating==\"No rating available\",0,toInteger(product_rating)),",
-						"          {Overall Rating} = iif(overall_rating==\"No rating available\",0,toInteger(overall_rating)),",
-						"          Brand = iifNull(brand,\"None\"),",
-						"          UniqId = concat(\r",
-						"    substring(uniq_id, 1, 8), '-',\r",
-						"    substring(uniq_id, 9, 4), '-',\r",
-						"    substring(uniq_id, 13, 4), '-',\r",
-						"    substring(uniq_id, 17, 4), '-',\r",
-						"    substring(uniq_id, 21, 12)\r",
-						"),",
-						"          loaded_time = currentTimestamp()) ~> derivedColumn1",
-						"derivedColumn1 select(mapColumn(",
-						"          uniq_id = UniqId,",
-						"          product_url,",
-						"          product_name,",
-						"          pid,",
-						"          image,",
-						"          is_FK_Advantage_product,",
-						"          description,",
-						"          Category,",
-						"          {Sub Category},",
-						"          {Sub Sub Category},",
-						"          {Retail Price},",
-						"          {Discounted Price},",
-						"          {Product Rating},",
-						"          {Overall Rating},",
-						"          Brand = derivedColumn1@Brand,",
-						"          crawl_timestamp,",
-						"          loaded_time",
-						"     ),",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> select1",
-						"select1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     deletable:false,",
-						"     insertable:true,",
-						"     updateable:false,",
-						"     upsertable:false,",
-						"     recreate:true,",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/Excel1')]",
-				"[concat(variables('factoryId'), '/datasets/AzureSqlTable3')]"
 			]
 		}
 	]

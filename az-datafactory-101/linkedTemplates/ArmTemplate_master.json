@@ -91,6 +91,10 @@
 			"type": "string",
 			"defaultValue": "admin"
 		},
+		"currencyfreaks_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://api.currencyfreaks.com/v2.0/rates/"
+		},
 		"trigger2_properties_typeProperties_scope": {
 			"type": "string",
 			"defaultValue": "/subscriptions/de585592-b752-4095-932e-ae95d4d9bbff/resourceGroups/az-storage-acc1/providers/Microsoft.Storage/storageAccounts/azureprojects101"
@@ -175,6 +179,9 @@
 					},
 					"AzureSqlDatabase4_properties_typeProperties_userName": {
 						"value": "[parameters('AzureSqlDatabase4_properties_typeProperties_userName')]"
+					},
+					"currencyfreaks_properties_typeProperties_url": {
+						"value": "[parameters('currencyfreaks_properties_typeProperties_url')]"
 					},
 					"SqlServer1_onprem_properties_typeProperties_server": {
 						"value": "[parameters('SqlServer1_onprem_properties_typeProperties_server')]"
